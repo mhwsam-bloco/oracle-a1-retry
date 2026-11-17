@@ -2,7 +2,7 @@ name: Oracle A1 retry
 
 on:
   schedule:
-    - cron: "7 * * * *"   # every hour (fits GitHub free minutes)
+    - cron: "*/20 * * * *"   # every 20 minutes (aggressive, ~10 days of free minutes)
   workflow_dispatch: {}       # "Run workflow" button for a manual try
 
 permissions:
@@ -51,7 +51,7 @@ jobs:
         env:
           SSH_PUBLIC_KEY_FILE: /home/runner/.oci/ssh.pub
           OCI_CLI_SUPPRESS_FILE_PERMISSIONS_WARNING: "True"
-        run: bash retry.sh
+        run: bash loop.sh
 
       - name: Switch off this workflow after success
         if: steps.try.outputs.result == 'created' || steps.try.outputs.result == 'exists'
