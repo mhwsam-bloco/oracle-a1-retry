@@ -2,7 +2,7 @@ name: Oracle A1 retry
 
 on:
   schedule:
-    - cron: "*/30 * * * *"   # every 30 minutes
+    - cron: "7 * * * *"   # every hour (fits GitHub free minutes)
   workflow_dispatch: {}       # "Run workflow" button for a manual try
 
 permissions:
