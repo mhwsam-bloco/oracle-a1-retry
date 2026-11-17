@@ -1,0 +1,60 @@
+name: Oracle A1 retry
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"   # every 30 minutes
+  workflow_dispatch: {}       # "Run workflow" button for a manual try
+
+permissions:
+  actions: write   # lets the job switch itself off after success
+  contents: read
+
+concurrency:
+  group: oracle-a1-retry
+  cancel-in-progress: false
+
+jobs:
+  retry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: .github/workflows/oracle-a1-retry.yml
+
+      - name: Install OCI CLI
+        run: pip install --quiet oci-cli
+
+      - name: Write OCI config and keys
+        env:
+          OCI_CONFIG: ${{ secrets.OCI_CONFIG }}
+          OCI_PRIVATE_KEY: ${{ secrets.OCI_PRIVATE_KEY }}
+          SSH_PUBLIC_KEY: ${{ secrets.SSH_PUBLIC_KEY }}
+        run: |
+          mkdir -p ~/.oci
+          printf '%s\n' "$OCI_PRIVATE_KEY" > ~/.oci/key.pem
+          chmod 600 ~/.oci/key.pem
+          printf '%s\n' "$OCI_CONFIG" > ~/.oci/config
+          # point key_file at the key we just wrote (replaces the placeholder line)
+          sed -i '/^key_file/d' ~/.oci/config
+          echo "key_file=$HOME/.oci/key.pem" >> ~/.oci/config
+          chmod 600 ~/.oci/config
+          printf '%s\n' "$SSH_PUBLIC_KEY" > ~/.oci/ssh.pub
+          echo "OCI_TENANCY_OCID=$(grep -E '^tenancy' ~/.oci/config | cut -d= -f2 | tr -d ' ')" >> "$GITHUB_ENV"
+
+      - name: Try to create the server
+        id: try
+        env:
+          SSH_PUBLIC_KEY_FILE: /home/runner/.oci/ssh.pub
+          OCI_CLI_SUPPRESS_FILE_PERMISSIONS_WARNING: "True"
+        run: bash retry.sh
+
+      - name: Switch off this workflow after success
+        if: steps.try.outputs.result == 'created' || steps.try.outputs.result == 'exists'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow disable "Oracle A1 retry" --repo "$GITHUB_REPOSITORY"
