@@ -61,7 +61,7 @@ log "ADs:    ${ADS[*]}"
 for AD in "${ADS[@]}"; do
   log "Trying $AD ..."
   out=$(oci compute instance launch \
-    -c "$C" \
+    --no-retry -c "$C" \
     --availability-domain "$AD" \
     --display-name "$NAME" \
     --shape "$SHAPE" \
