@@ -2,7 +2,7 @@ name: Oracle A1 retry
 
 on:
   schedule:
-    - cron: "*/20 * * * *"   # every 20 minutes (aggressive, ~10 days of free minutes)
+    - cron: "3/20 * * * *"   # at :03, :23, :43 every hour (avoids busy top of hour)
   workflow_dispatch: {}       # "Run workflow" button for a manual try
 
 permissions:
