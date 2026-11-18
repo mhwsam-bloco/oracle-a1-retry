@@ -1,12 +1,17 @@
 name: Oracle A1 retry
 
+# GitHub's scheduler never fired for this repo, so each run keeps trying for
+# about 5.5 hours and then starts the next run itself. Click "Run workflow"
+# once to start the chain. It stops by itself once the server exists.
+# To stop it manually: Actions > Oracle A1 retry > "..." > Disable workflow.
+
 on:
   schedule:
-    - cron: "7,27,47 * * * *"   # at :07, :27, :47 every hour (UTC)
-  workflow_dispatch: {}       # "Run workflow" button for a manual try
+    - cron: "7,27,47 * * * *"   # backup only, in case GitHub's scheduler starts working
+  workflow_dispatch: {}         # "Run workflow" button, also used by the self-restart step
 
 permissions:
-  actions: write   # lets the job switch itself off after success
+  actions: write   # lets the job restart itself, and switch itself off after success
   contents: read
 
 concurrency:
@@ -16,7 +21,7 @@ concurrency:
 jobs:
   retry:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 350   # GitHub's limit is 360
     steps:
       - uses: actions/checkout@v4
 
@@ -51,6 +56,8 @@ jobs:
         env:
           SSH_PUBLIC_KEY_FILE: /home/runner/.oci/ssh.pub
           OCI_CLI_SUPPRESS_FILE_PERMISSIONS_WARNING: "True"
+          RUN_SECONDS: "19800"   # keep trying for 5.5 hours in this run
+          SLEEP_SECONDS: "60"    # wait 60 s between rounds (gentle on Oracle's API)
         run: bash loop.sh
 
       - name: Switch off this workflow after success
@@ -58,3 +65,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh workflow disable "Oracle A1 retry" --repo "$GITHUB_REPOSITORY"
+
+      - name: Start the next run
+        if: success() && steps.try.outputs.result != 'created' && steps.try.outputs.result != 'exists'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run oracle-a1-retry.yml --repo "$GITHUB_REPOSITORY" --ref main
