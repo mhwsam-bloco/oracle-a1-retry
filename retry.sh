@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
-# Tries to create ONE Always Free Ampere server (4 OCPU / 24 GB / 150 GB disk)
+# Tries to create ONE Always Free Ampere server (2 OCPU / 12 GB / 150 GB disk)
 # in Oracle Cloud, Chicago. Rotates through all availability domains.
 # Safe by design:
-#   - only ever requests VM.Standard.A1.Flex with 4 OCPU / 24 GB (Always Free limit)
+#   - only ever requests VM.Standard.A1.Flex with 2 OCPU / 12 GB (Always Free limit)
 #   - stops if ANY A1 server already exists, so it can never create a second one
 #   - stops if total disk would go over the free 200 GB
 set -uo pipefail
 
 NAME="main-server"
 SHAPE="VM.Standard.A1.Flex"
-OCPUS=4
-MEMORY_GB=24
+OCPUS=2
+MEMORY_GB=12
 BOOT_GB=150
 FREE_DISK_GB=200
 SUBNET_NAME="public subnet-main-vcn"
