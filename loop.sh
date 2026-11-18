@@ -12,7 +12,7 @@ while (( SECONDS < DEADLINE )); do
   if [[ $rc -ne 0 ]]; then exit "$rc"; fi
   if grep -q '^result=' "${GITHUB_OUTPUT:-/dev/null}" 2>/dev/null; then exit 0; fi
   if (( SECONDS + 15 >= DEADLINE )); then break; fi
-  sleep 10
+  sleep "${SLEEP_SECONDS:-10}"
 done
-echo "Finished $round rounds - no capacity yet. Next run in ~20 minutes."
+echo "Finished $round rounds - no capacity yet. Starting the next run."
 exit 0
